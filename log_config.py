@@ -10,7 +10,7 @@ console_handler.setLevel(logging.INFO)
 
 log_file = "app.log"
 file_handler = RotatingFileHandler(
-    log_file, maxBytes=5*1024*1024, backupCount=0, encoding='utf-8')  # 设置最大文件大小为5MB，备份文件数量为0
+    log_file, maxBytes=5*1024, backupCount=0, encoding='utf-8')
 file_handler.setLevel(logging.INFO)
 
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')

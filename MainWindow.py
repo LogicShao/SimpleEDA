@@ -1,11 +1,11 @@
-from log_config import logger
-
-import PyQt6.QtWidgets as qtw
-import PyQt6.QtGui as qtg
+from common_import import *
 import CircuitItem as CI
+import typing as tp
 
 
 class MainWindow(qtw.QMainWindow):
+    selectedNode: tp.Optional[CI.CircuitNode] = None
+
     def __init__(self):
         super().__init__()
 
@@ -37,19 +37,22 @@ class MainWindow(qtw.QMainWindow):
         self.addCurrentSourceBtn.clicked.connect(self.addCurrentSource)
 
     def addResistor(self):
-        logger.info("添加电阻")
-
         item = CI.ResistorItem()
         self.scene.addItem(item)
 
     def addVoltageSource(self):
-        logger.info("添加电压源")
-
         item = CI.VoltageSourceItem()
         self.scene.addItem(item)
 
     def addCurrentSource(self):
-        logger.info("添加电流源")
-
         item = CI.CurrentSourceItem()
         self.scene.addItem(item)
+
+    def NodeSelect(self, node: CI.CircuitNode):
+        if self.selectedNode is None:
+            logger.info('选择导线起点')
+            self.selectedNode = node
+        else:
+            logger.info('选择导线终点')
+            self.scene.addItem(CI.WireItem(self.selectedNode, node))
+            self.selectedNode = None
