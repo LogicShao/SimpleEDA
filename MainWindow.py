@@ -1,9 +1,11 @@
 from common_import import *
+from Solver import *
 import CircuitItem as CI
 
 
 class MainWindow(qtw.QMainWindow):
-    selectedNode: CI.CircuitNode | None = None
+    selectedNode: CI.ItemNode | None = None
+    wires: list[CI.WireItem] = []
 
     def __init__(self):
         super().__init__()
@@ -34,12 +36,16 @@ class MainWindow(qtw.QMainWindow):
         btn.clicked.connect(lambda: self.scene.addItem(item()))
         btnLayout.addWidget(btn)
 
-    def NodeSelect(self, node: CI.CircuitNode):
+    def NodeSelect(self, node: CI.ItemNode):
         if self.selectedNode is None:
             logger.info('选择导线起点')
             self.selectedNode = node
         else:
             logger.info('选择导线终点')
-            self.scene.addItem(CI.WireItem(self.selectedNode, node))
-            self.scene.update()
+            node1, node2 = self.selectedNode, node
             self.selectedNode = None
+
+            wire = CI.WireItem(node1, node2)
+            self.scene.addItem(wire)
+            self.scene.update()
+            self.wires.append(wire)

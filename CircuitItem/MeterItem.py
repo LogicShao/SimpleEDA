@@ -1,10 +1,10 @@
-from .BaseCircuitItem import BaseCircuitItem, CircuitNode
+from .BaseCircuitItem import *
 from common_import import *
 
 
-class VoltmeterSymbol(qtw.QGraphicsItem):
-    def __init__(self):
-        super().__init__()
+class VoltmeterSymbol(ItemSymbol):
+    def __init__(self, parent: qtw.QGraphicsItem):
+        super().__init__(parent=parent)
 
         self.size = 60
         self.margin = 15
@@ -42,6 +42,8 @@ class VoltmeterSymbol(qtw.QGraphicsItem):
 
 
 class VoltmeterItem(BaseCircuitItem):
+    _item_counter = ItemCounter()
+
     @staticmethod
     def What() -> str:
         return '电压表'
@@ -49,27 +51,29 @@ class VoltmeterItem(BaseCircuitItem):
     def __init__(self):
         super().__init__()
 
-        self.voltmeterSymbol = VoltmeterSymbol()
-        self.voltmeterSymbol.setParentItem(self)
+        self.mainSymbol = VoltmeterSymbol(parent=self)
+        self.nodes = [ItemNode(parent=self, position=pos)
+                      for pos in self.mainSymbol.getNodePos()]
 
-        self.nodes = [CircuitNode(pos)
-                      for pos in self.voltmeterSymbol.getNodePos()]
-        for node in self.nodes:
-            node.setParentItem(self)
+        self.width = self.mainSymbol.size + self.nodes[0].radius
+        self.height = self.mainSymbol.size
 
-        self.width = self.voltmeterSymbol.size + self.nodes[0].radius
-        self.height = self.voltmeterSymbol.size
+        self.nameText = ItemInfo(
+            parent=self,
+            text=self.getName(),
+            position=qtc.QPointF(0, self.height / 2)
+        )
 
     def boundingRect(self):
-        return qtc.QRectF(0, 0, self.width, self.height)
+        return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
         pass
 
 
-class AmmeterSymbol(qtw.QGraphicsItem):
-    def __init__(self):
-        super().__init__()
+class AmmeterSymbol(ItemSymbol):
+    def __init__(self, parent: qtw.QGraphicsItem):
+        super().__init__(parent=parent)
 
         self.size = 60
         self.margin = 15
@@ -109,6 +113,8 @@ class AmmeterSymbol(qtw.QGraphicsItem):
 
 
 class AmmeterItem(BaseCircuitItem):
+    _item_counter = ItemCounter()
+
     @staticmethod
     def What() -> str:
         return '电流表'
@@ -116,19 +122,21 @@ class AmmeterItem(BaseCircuitItem):
     def __init__(self):
         super().__init__()
 
-        self.ammeterSymbol = AmmeterSymbol()
-        self.ammeterSymbol.setParentItem(self)
+        self.mainSymbol = AmmeterSymbol(parent=self)
+        self.nodes = [ItemNode(parent=self, position=pos)
+                      for pos in self.mainSymbol.getNodePos()]
 
-        self.nodes = [CircuitNode(pos)
-                      for pos in self.ammeterSymbol.getNodePos()]
-        for node in self.nodes:
-            node.setParentItem(self)
+        self.width = self.mainSymbol.size + self.nodes[0].radius
+        self.height = self.mainSymbol.size
 
-        self.width = self.ammeterSymbol.size + self.nodes[0].radius
-        self.height = self.ammeterSymbol.size
+        self.nameText = ItemInfo(
+            parent=self,
+            text=self.getName(),
+            position=qtc.QPointF(0, self.height / 2)
+        )
 
     def boundingRect(self):
-        return qtc.QRectF(0, 0, self.width, self.height)
+        return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
         pass

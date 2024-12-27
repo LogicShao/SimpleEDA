@@ -1,11 +1,11 @@
-from .BaseCircuitItem import BaseCircuitItem, CircuitNode, ItemInfo
+from .BaseCircuitItem import *
 from common_import import *
 
 
-class VoltageSourceSymbol(qtw.QGraphicsItem):
+class VoltageSourceSymbol(ItemSymbol):
     # 直流电压源
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: qtw.QGraphicsItem):
+        super().__init__(parent=parent)
         self.size = 60
         self.radius = self.size * 0.25
 
@@ -28,6 +28,8 @@ class VoltageSourceSymbol(qtw.QGraphicsItem):
 
 
 class VoltageSourceItem(BaseCircuitItem):
+    _item_counter = ItemCounter()
+
     @staticmethod
     def What() -> str:
         return '电压源'
@@ -35,23 +37,25 @@ class VoltageSourceItem(BaseCircuitItem):
     def __init__(self, voltage: float = 10):
         super().__init__()
 
-        self.voltageSourceSymbol = VoltageSourceSymbol()
-        self.voltageSourceSymbol.setParentItem(self)
+        self.mainSymbol = VoltageSourceSymbol(parent=self)
+        self.nodes = [ItemNode(parent=self, position=pos)
+                      for pos in self.mainSymbol.getNodesPos()]
 
-        self.nodes_pos = self.voltageSourceSymbol.getNodesPos()
-        self.nodes = [CircuitNode(pos) for pos in self.nodes_pos]
-        for node in self.nodes:
-            node.setParentItem(self)
-
-        self.width = self.voltageSourceSymbol.size + 2 * self.nodes[0].radius
-        self.height = self.voltageSourceSymbol.size
+        self.width = self.mainSymbol.size + 2 * self.nodes[0].radius
+        self.height = self.mainSymbol.size
 
         self.voltage = voltage
         self.voltageInfo = ItemInfo(
+            parent=self,
             text=f'{self.voltage}V',
-            position=qtc.QPointF(-self.width / 2, -self.height / 2 - 10)
+            position=qtc.QPointF(0, -self.height / 2)
         )
-        self.voltageInfo.setParentItem(self)
+
+        self.nameText = ItemInfo(
+            parent=self,
+            text=self.getName(),
+            position=qtc.QPointF(0, self.height / 2)
+        )
 
     def boundingRect(self):
         return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
@@ -59,18 +63,11 @@ class VoltageSourceItem(BaseCircuitItem):
     def paint(self, painter, option, widget=None):
         pass
 
-    def modifyItem(self):
-        logger.info('修改电压源')
 
-    def deleteItem(self):
-        logger.info('删除电压源')
-        self.scene().removeItem(self)
-
-
-class CurrentSourceSymbol(qtw.QGraphicsItem):
+class CurrentSourceSymbol(ItemSymbol):
     # 直流电流源
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: qtw.QGraphicsItem):
+        super().__init__(parent=parent)
         self.size = 60
         self.radius = self.size * 0.25
 
@@ -97,6 +94,8 @@ class CurrentSourceSymbol(qtw.QGraphicsItem):
 
 
 class CurrentSourceItem(BaseCircuitItem):
+    _item_counter = ItemCounter()
+
     @staticmethod
     def What() -> str:
         return '电流源'
@@ -104,23 +103,25 @@ class CurrentSourceItem(BaseCircuitItem):
     def __init__(self, current: float = 10):
         super().__init__()
 
-        self.currentSourceSymbol = CurrentSourceSymbol()
-        self.currentSourceSymbol.setParentItem(self)
+        self.mainSymbol = CurrentSourceSymbol(parent=self)
+        self.nodes = [ItemNode(parent=self, position=pos)
+                      for pos in self.mainSymbol.getNodesPos()]
 
-        self.nodes_pos = self.currentSourceSymbol.getNodesPos()
-        self.nodes = [CircuitNode(pos) for pos in self.nodes_pos]
-        for node in self.nodes:
-            node.setParentItem(self)
-
-        self.width = self.currentSourceSymbol.size + 2 * self.nodes[0].radius
-        self.height = self.currentSourceSymbol.size
+        self.width = self.mainSymbol.size + 2 * self.nodes[0].radius
+        self.height = self.mainSymbol.size
 
         self.current = current
         self.currentInfo = ItemInfo(
+            parent=self,
             text=f'{self.current}A',
-            position=qtc.QPointF(-self.width / 2, -self.height / 2 - 10)
+            position=qtc.QPointF(0, -self.height / 2)
         )
-        self.currentInfo.setParentItem(self)
+
+        self.nameText = ItemInfo(
+            parent=self,
+            text=self.getName(),
+            position=qtc.QPointF(0, self.height / 2)
+        )
 
     def boundingRect(self):
         return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
@@ -129,9 +130,9 @@ class CurrentSourceItem(BaseCircuitItem):
         pass
 
 
-class GroundSymbol(qtw.QGraphicsItem):
-    def __init__(self):
-        super().__init__()
+class GroundSymbol(ItemSymbol):
+    def __init__(self, parent: qtw.QGraphicsItem):
+        super().__init__(parent=parent)
         self.width = 40
         self.height = 20
 
@@ -151,26 +152,30 @@ class GroundSymbol(qtw.QGraphicsItem):
 
 
 class GroundItem(BaseCircuitItem):
+    _item_counter = ItemCounter()
+
     @staticmethod
     def What() -> str:
-        return '接地'
+        return 'GND'
 
     def __init__(self):
         super().__init__()
 
-        self.groundSymbol = GroundSymbol()
-        self.groundSymbol.setParentItem(self)
+        self.mainSymbol = GroundSymbol(parent=self)
+        self.nodes = [ItemNode(parent=self, position=pos)
+                      for pos in self.mainSymbol.getNodesPos()]
 
-        self.nodes_pos = self.groundSymbol.getNodesPos()
-        self.nodes = [CircuitNode(pos) for pos in self.nodes_pos]
-        for node in self.nodes:
-            node.setParentItem(self)
+        self.width = self.mainSymbol.width
+        self.height = self.mainSymbol.height + self.nodes[0].radius
 
-        self.width = self.groundSymbol.width
-        self.height = self.groundSymbol.height + self.nodes[0].radius
+        self.nameText = ItemInfo(
+            parent=self,
+            text=self.getName(),
+            position=qtc.QPointF(0, self.height + 10)
+        )
 
     def boundingRect(self):
-        return qtc.QRectF(0, 0, self.width, self.height)
+        return qtc.QRectF(-self.width / 2, 0, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
         pass

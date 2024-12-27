@@ -1,12 +1,15 @@
-from .BaseCircuitItem import CircuitNode, BaseCircuitItem, ItemInfo
+from .BaseCircuitItem import *
 from common_import import *
 
 
 class WireItem(qtw.QGraphicsItem):
-    def __init__(self, start: CircuitNode, end: CircuitNode):
+    def __init__(self, start: ItemNode, end: ItemNode):
         super().__init__()
         self.start = start
         self.end = end
+
+        self.start.signals.selfDeleted.connect(self.removeItem)
+        self.end.signals.selfDeleted.connect(self.removeItem)
 
         self.start.signals.positionChanged.connect(self.updatePosition)
         self.end.signals.positionChanged.connect(self.updatePosition)
@@ -17,6 +20,24 @@ class WireItem(qtw.QGraphicsItem):
             self.end.scenePos().x(),
             self.end.scenePos().y()
         ))
+
+    def start_item(self):
+        return self.start.parentItem()
+
+    def end_item(self):
+        return self.end.parentItem()
+
+    def removeItem(self):
+        self.start.signals.positionChanged.disconnect(self.updatePosition)
+        self.end.signals.positionChanged.disconnect(self.updatePosition)
+
+        self.start.signals.selfDeleted.disconnect(self.removeItem)
+        self.end.signals.selfDeleted.disconnect(self.removeItem)
+
+        scene = self.scene()
+        if scene:
+            scene.removeItem(self)
+            scene.update()
 
     def boundingRect(self):
         return qtc.QRectF(self.start.scenePos(), self.end.scenePos())
@@ -41,10 +62,19 @@ class WireItem(qtw.QGraphicsItem):
         self.update()
         self.scene().update()
 
+    def contextMenuEvent(self, event):
+        menu = qtw.QMenu()
+        deleteAction = menu.addAction('删除')
+        action = menu.exec(event.screenPos())
+        if action == deleteAction:
+            self.removeItem()
+        else:
+            super().contextMenuEvent(event)
 
-class ResistorSymbol(qtw.QGraphicsItem):
-    def __init__(self):
-        super().__init__()
+
+class ResistorSymbol(ItemSymbol):
+    def __init__(self, parent: qtw.QGraphicsItem):
+        super().__init__(parent=parent)
         self.width = 60
         self.height = 20
 
@@ -87,6 +117,8 @@ class ResistorSymbol(qtw.QGraphicsItem):
 
 
 class ResistorItem(BaseCircuitItem):
+    _item_counter = ItemCounter()
+
     @staticmethod
     def What() -> str:
         return '电阻'
@@ -94,23 +126,25 @@ class ResistorItem(BaseCircuitItem):
     def __init__(self, resistance: float = 10):
         super().__init__()
 
-        self.resistorSymbol = ResistorSymbol()
-        self.resistorSymbol.setParentItem(self)
+        self.mainSymbol = ResistorSymbol(parent=self)
+        self.nodes = [ItemNode(parent=self, position=pos)
+                      for pos in self.mainSymbol.getNodesPos()]
 
-        self.nodes_pos = self.resistorSymbol.getNodesPos()
-        self.nodes = [CircuitNode(pos) for pos in self.nodes_pos]
-        for node in self.nodes:
-            node.setParentItem(self)
-
-        self.width = self.resistorSymbol.width + 2 * self.nodes[0].radius
-        self.height = self.resistorSymbol.height
+        self.width = self.mainSymbol.width + 2 * self.nodes[0].radius
+        self.height = self.mainSymbol.height
 
         self.resistance = resistance
         self.resistanceInfo = ItemInfo(
+            parent=self,
             text='{:.0f}Ω'.format(self.resistance),
-            position=qtc.QPointF(0, -self.height / 2 - 10)
+            position=qtc.QPointF(self.width / 2, -12)
         )
-        self.resistanceInfo.setParentItem(self)
+
+        self.nameText = ItemInfo(
+            parent=self,
+            text=self.getName(),
+            position=qtc.QPointF(self.width / 2, self.height + 14)
+        )
 
     def paint(self, painter, option, widget=None):
         pass
