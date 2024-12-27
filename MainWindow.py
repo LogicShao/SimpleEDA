@@ -1,10 +1,9 @@
 from common_import import *
 import CircuitItem as CI
-import typing as tp
 
 
 class MainWindow(qtw.QMainWindow):
-    selectedNode: tp.Optional[CI.CircuitNode] = None
+    selectedNode: CI.CircuitNode | None = None
 
     def __init__(self):
         super().__init__()
@@ -24,29 +23,16 @@ class MainWindow(qtw.QMainWindow):
         self.setCentralWidget(qtw.QWidget())
         self.centralWidget().setLayout(layout)
 
-        self.addResistorBtn = qtw.QPushButton("添加电阻")
-        self.addVoltageSourceBtn = qtw.QPushButton("添加电压源")
-        self.addCurrentSourceBtn = qtw.QPushButton("添加电流源")
+        self.btnBox = qtw.QHBoxLayout()
+        for itemType in CI.BTN_ITEM_TYPES:
+            self.addItemBtn(self.btnBox, itemType)
 
-        layout.addWidget(self.addResistorBtn)
-        layout.addWidget(self.addVoltageSourceBtn)
-        layout.addWidget(self.addCurrentSourceBtn)
+        layout.addLayout(self.btnBox)
 
-        self.addResistorBtn.clicked.connect(self.addResistor)
-        self.addVoltageSourceBtn.clicked.connect(self.addVoltageSource)
-        self.addCurrentSourceBtn.clicked.connect(self.addCurrentSource)
-
-    def addResistor(self):
-        item = CI.ResistorItem()
-        self.scene.addItem(item)
-
-    def addVoltageSource(self):
-        item = CI.VoltageSourceItem()
-        self.scene.addItem(item)
-
-    def addCurrentSource(self):
-        item = CI.CurrentSourceItem()
-        self.scene.addItem(item)
+    def addItemBtn(self, btnLayout: qtw.QHBoxLayout, item: type[CI.BaseCircuitItem]):
+        btn = qtw.QPushButton('添加{}'.format(item.What()))
+        btn.clicked.connect(lambda: self.scene.addItem(item()))
+        btnLayout.addWidget(btn)
 
     def NodeSelect(self, node: CI.CircuitNode):
         if self.selectedNode is None:
@@ -55,4 +41,5 @@ class MainWindow(qtw.QMainWindow):
         else:
             logger.info('选择导线终点')
             self.scene.addItem(CI.WireItem(self.selectedNode, node))
+            self.scene.update()
             self.selectedNode = None

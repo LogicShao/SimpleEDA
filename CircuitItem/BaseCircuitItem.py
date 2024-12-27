@@ -1,8 +1,9 @@
 from common_import import *
-from abc import abstractmethod
 
 
 class CircuitNode(qtw.QGraphicsItem):
+    potential: float | None = None
+
     class SignalEmitter(qtc.QObject):
         positionChanged = qtc.pyqtSignal()
 
@@ -42,8 +43,12 @@ class CircuitNode(qtw.QGraphicsItem):
         super().mousePressEvent(event)
 
 
-class BasicCircuitItem(qtw.QGraphicsItem):
+class BaseCircuitItem(qtw.QGraphicsItem):
     nodes: list[CircuitNode]
+
+    @staticmethod
+    def What() -> str:
+        return '电路元件'
 
     def __init__(self):
         super().__init__()
@@ -53,6 +58,8 @@ class BasicCircuitItem(qtw.QGraphicsItem):
             qtw.QGraphicsItem.GraphicsItemFlag.ItemIsMovable |
             qtw.QGraphicsItem.GraphicsItemFlag.ItemIsFocusable |
             qtw.QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+
+        logger.info('添加{}'.format(self.What()))
 
     def keyPressEvent(self, event):
         if event.key() == qtc.Qt.Key.Key_Delete:
@@ -70,16 +77,23 @@ class BasicCircuitItem(qtw.QGraphicsItem):
         action = menu.exec(event.screenPos())
         if action == deleteAction:
             self.deleteItem()
-        else:
+        elif action == modifyAction:
             self.modifyItem()
+        else:
+            super().contextMenuEvent(event)
 
-    @abstractmethod
     def modifyItem(self):
-        pass
+        logger.info('修改{}图元'.format(self.what))
 
-    @abstractmethod
     def deleteItem(self):
-        pass
+        logger.info('删除{}图元'.format(self.what))
+        self.scene().removeItem(self)
+
+    def itemChange(self, change, value):
+        if change == qtw.QGraphicsItem.GraphicsItemChange.ItemPositionChange:
+            for node in self.nodes:
+                node.signals.positionChanged.emit()
+        return super().itemChange(change, value)
 
 
 class ItemInfo(qtw.QGraphicsItem):

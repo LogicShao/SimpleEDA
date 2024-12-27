@@ -1,5 +1,45 @@
-from .BasicCircuitItem import BasicCircuitItem, CircuitNode, ItemInfo
+from .BaseCircuitItem import CircuitNode, BaseCircuitItem, ItemInfo
 from common_import import *
+
+
+class WireItem(qtw.QGraphicsItem):
+    def __init__(self, start: CircuitNode, end: CircuitNode):
+        super().__init__()
+        self.start = start
+        self.end = end
+
+        self.start.signals.positionChanged.connect(self.updatePosition)
+        self.end.signals.positionChanged.connect(self.updatePosition)
+
+        logger.info('添加导线 ({},{}) -> ({},{})'.format(
+            self.start.scenePos().x(),
+            self.start.scenePos().y(),
+            self.end.scenePos().x(),
+            self.end.scenePos().y()
+        ))
+
+    def boundingRect(self):
+        return qtc.QRectF(self.start.scenePos(), self.end.scenePos())
+
+    def paint(self, painter, option, widget=None):
+        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        painter.setPen(pen)
+
+        start_pos = self.start.scenePos()
+        end_pos = self.end.scenePos()
+        x1, y1 = start_pos.x(), start_pos.y()
+        x2, y2 = end_pos.x(), end_pos.y()
+        if abs(x1 - x2) > abs(y1 - y2):
+            x3, y3 = x1, y2
+        else:
+            x3, y3 = x2, y1
+        painter.drawLine(start_pos, qtc.QPointF(x3, y3))
+        painter.drawLine(qtc.QPointF(x3, y3), end_pos)
+
+    def updatePosition(self):
+        self.prepareGeometryChange()
+        self.update()
+        self.scene().update()
 
 
 class ResistorSymbol(qtw.QGraphicsItem):
@@ -46,7 +86,11 @@ class ResistorSymbol(qtw.QGraphicsItem):
                 qtc.QPointF(self.width, self.height / 2)]
 
 
-class ResistorItem(BasicCircuitItem):
+class ResistorItem(BaseCircuitItem):
+    @staticmethod
+    def What() -> str:
+        return '电阻'
+
     def __init__(self, resistance: float = 10):
         super().__init__()
 
@@ -68,17 +112,8 @@ class ResistorItem(BasicCircuitItem):
         )
         self.resistanceInfo.setParentItem(self)
 
-        logger.info('添加 {:.0f}Ω 电阻'.format(self.resistance))
-
     def paint(self, painter, option, widget=None):
         pass
 
     def boundingRect(self):
         return qtc.QRectF(0, 0, self.width, self.height)
-
-    def modifyItem(self):
-        logger.info('修改电阻')
-
-    def deleteItem(self):
-        logger.info('删除电阻')
-        self.scene().removeItem(self)
