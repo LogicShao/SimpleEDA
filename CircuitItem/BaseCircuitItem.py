@@ -1,4 +1,5 @@
 from common_import import *
+from abc import abstractmethod
 
 
 class ItemCounter:
@@ -72,6 +73,10 @@ class ItemInfo(ItemSymbol):
         painter.drawText(self.boundingRect(),
                          qtc.Qt.AlignmentFlag.AlignCenter, self.text)
 
+    def set_text(self, text: str):
+        self.text = text
+        self.update()
+
 
 class ItemNode(ItemSymbol):
     wires: set
@@ -97,6 +102,8 @@ class ItemNode(ItemSymbol):
             qtw.QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
 
         self.item_id = self._item_node_counter.genItemID()
+        self.id_info = ItemInfo(parent=self, text=str(
+            self.item_id), position=qtc.QPointF(0, -12))
 
     def __del__(self):
         self._item_node_counter.delItemID(self.item_id)
@@ -137,10 +144,44 @@ class ItemNode(ItemSymbol):
         return [wire.start if wire.end == self else wire.end for wire in self.wires]
 
 
+class ModifyItemDialog(qtw.QDialog):
+    def __init__(self, item: 'BaseCircuitItem'):
+        super().__init__()
+        self.item = item
+        self.setWindowTitle('修改{}'.format(item.getName()))
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = qtw.QVBoxLayout()
+        self.setLayout(layout)
+
+        self.lineEdit = qtw.QLineEdit()
+        self.lineEdit.setValidator(qtg.QDoubleValidator())
+        layout.addWidget(self.lineEdit)
+
+        self.btnBox = qtw.QHBoxLayout()
+        self.addBtn(self.btnBox, '确定', self.accept)
+        self.addBtn(self.btnBox, '取消', self.reject)
+
+        layout.addLayout(self.btnBox)
+
+    def addBtn(self, layout: qtw.QHBoxLayout, text: str, func):
+        btn = qtw.QPushButton(text)
+        btn.clicked.connect(func)
+        layout.addWidget(btn)
+
+    def accept(self):
+        value = float(self.lineEdit.text())
+        self.item.set_value(value)
+        super().accept()
+        logger.info('修改{}为{}'.format(self.item.getName(), value))
+
+
 class BaseCircuitItem(qtw.QGraphicsItem):
     nodes: list[ItemNode]
     mainSymbol: ItemSymbol
     _item_counter = ItemCounter()
+    _has_value: bool = False
     item_id: int
 
     @staticmethod
@@ -171,7 +212,6 @@ class BaseCircuitItem(qtw.QGraphicsItem):
 
     def __del__(self):
         self._item_counter.delItemID(self.item_id)
-
         logger.info('删除{}'.format(self.getName()))
 
     def keyPressEvent(self, event):
@@ -196,7 +236,15 @@ class BaseCircuitItem(qtw.QGraphicsItem):
             super().contextMenuEvent(event)
 
     def modifyItem(self):
+        if not self._has_value:
+            qtw.QMessageBox.warning(self.scene().views()[
+                                    0].window(), '提示', '不可修改')
+            return
+
         logger.info('修改{}'.format(self.getName()))
+
+        dialog = ModifyItemDialog(self)
+        dialog.exec()
 
     def deleteItem(self):
         logger.info('删除{}'.format(self.getName()))
@@ -219,3 +267,6 @@ class BaseCircuitItem(qtw.QGraphicsItem):
         if not isinstance(other, BaseCircuitItem):
             raise TypeError('类型不匹配')
         return self.item_id < other.item_id
+
+    def set_value(self, value: float):
+        pass

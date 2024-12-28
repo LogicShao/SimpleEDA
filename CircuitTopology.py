@@ -4,6 +4,11 @@ import CircuitItem as CI
 import numpy as np
 
 
+class NoGNDNodeError(Exception):
+    def __init__(self):
+        super().__init__('电路没有接地')
+
+
 class CircuitTopology:
     def __init__(self, item_nodes: set[CI.ItemNode]):
         self.circuit_nodes = self.getCircuitNodes(item_nodes)
@@ -88,6 +93,9 @@ class CircuitTopology:
     def get_MNA_matrix(self):
         num_nodes = self.getNumOfNotGND()
         num_voltage_sources = self.getVoltageSourcesNum()
+
+        if num_nodes == len(self.circuit_nodes):
+            raise NoGNDNodeError()
 
         logger.info('节点数：{}'.format(num_nodes))
         logger.info('电压源数：{}'.format(num_voltage_sources))

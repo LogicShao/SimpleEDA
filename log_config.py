@@ -10,7 +10,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 
 # 创建文件处理程序并设置级别为INFO
-log_file = "app.log"
+log_file = "info.log"
 file_handler = RotatingFileHandler(
     log_file, maxBytes=5*1024, backupCount=0, encoding='utf-8')
 file_handler.setLevel(logging.INFO)

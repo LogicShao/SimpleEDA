@@ -38,9 +38,14 @@ class WireItem(qtw.QGraphicsItem):
         self.end.removeWire(self)
 
         scene = self.scene()
-        if scene:
-            scene.removeItem(self)
-            scene.update()
+        if not scene:
+            return
+        mainWindow = scene.views()[0].window()
+        if mainWindow:
+            mainWindow._linked_item_node_pairs.remove((self.start, self.end))
+            mainWindow._linked_item_node_pairs.remove((self.end, self.start))
+        scene.removeItem(self)
+        scene.update()
 
     def boundingRect(self):
         return qtc.QRectF(self.start.scenePos(), self.end.scenePos())
@@ -121,6 +126,7 @@ class ResistorSymbol(ItemSymbol):
 
 class ResistorItem(BaseCircuitItem):
     _item_counter = ItemCounter()
+    _has_value = True
 
     @staticmethod
     def What() -> str:
@@ -154,3 +160,8 @@ class ResistorItem(BaseCircuitItem):
 
     def boundingRect(self):
         return qtc.QRectF(0, 0, self.width, self.height)
+
+    def set_value(self, value):
+        self.resistance = value
+        self.resistanceInfo.set_text('{:.0f}Ω'.format(self.resistance))
+        self.scene().update()

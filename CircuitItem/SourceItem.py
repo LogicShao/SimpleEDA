@@ -29,6 +29,7 @@ class VoltageSourceSymbol(ItemSymbol):
 
 class VoltageSourceItem(BaseCircuitItem):
     _item_counter = ItemCounter()
+    _has_value = True
 
     @staticmethod
     def What() -> str:
@@ -57,11 +58,28 @@ class VoltageSourceItem(BaseCircuitItem):
             position=qtc.QPointF(0, self.height / 2)
         )
 
+        # 绘制电压源的正负极符号
+        self.plusSymbol = ItemInfo(
+            parent=self,
+            text='+',
+            position=qtc.QPointF(-self.width / 2, -self.height / 2)
+        )
+        self.minusSymbol = ItemInfo(
+            parent=self,
+            text='-',
+            position=qtc.QPointF(self.width / 2, -self.height / 2)
+        )
+
     def boundingRect(self):
         return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
         pass
+
+    def set_value(self, value):
+        self.voltage = value
+        self.voltageInfo.set_text(f'{self.voltage}V')
+        self.scene().update()
 
 
 class CurrentSourceSymbol(ItemSymbol):
@@ -95,6 +113,7 @@ class CurrentSourceSymbol(ItemSymbol):
 
 class CurrentSourceItem(BaseCircuitItem):
     _item_counter = ItemCounter()
+    _has_value = True
 
     @staticmethod
     def What() -> str:
@@ -123,11 +142,23 @@ class CurrentSourceItem(BaseCircuitItem):
             position=qtc.QPointF(0, self.height / 2)
         )
 
+        # 绘制电流方向 ----> 符号
+        self.arrowSymbol = ItemInfo(
+            parent=self,
+            text='---->',
+            position=qtc.QPointF(0, self.height / 2 + 15)
+        )
+
     def boundingRect(self):
         return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
         pass
+
+    def set_value(self, value):
+        self.current = value
+        self.currentInfo.set_text(f'{self.current}A')
+        self.scene().update()
 
 
 class GroundSymbol(ItemSymbol):

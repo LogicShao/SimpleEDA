@@ -4,7 +4,8 @@ import CircuitItem as CI
 
 
 class MainWindow(qtw.QMainWindow):
-    selectedNode: CI.ItemNode | None = None
+    _selected_node: CI.ItemNode | None = None
+    _linked_item_node_pairs: set[tuple[CI.ItemNode, CI.ItemNode]] = set()
     item_nodes: set[CI.ItemNode]
 
     def __init__(self):
@@ -52,13 +53,23 @@ class MainWindow(qtw.QMainWindow):
         btnLayout.addWidget(btn)
 
     def NodeSelect(self, node: CI.ItemNode):
-        if self.selectedNode is None:
+        if self._selected_node is None:
             logger.info('选择导线起点')
-            self.selectedNode = node
+            self._selected_node = node
         else:
             logger.info('选择导线终点')
-            node1, node2 = self.selectedNode, node
-            self.selectedNode = None
+            node1, node2 = self._selected_node, node
+            self._selected_node = None
+
+            if node1 == node2:
+                logger.info('起点和终点不能相同，取消连接')
+                return
+            if (node1, node2) in self._linked_item_node_pairs:
+                logger.info('连接已存在，取消连接')
+                return
+
+            self._linked_item_node_pairs.add((node1, node2))
+            self._linked_item_node_pairs.add((node2, node1))
 
             wire = CI.WireItem(node1, node2)
             self.scene.addItem(wire)
@@ -66,9 +77,15 @@ class MainWindow(qtw.QMainWindow):
             self.item_nodes.add(node1)
             self.item_nodes.add(node2)
 
-    def solve(self):
+    def _solve(self):
         solver = CircuitTopology(self.item_nodes)
         logger.info(solver)
         martrix = solver.get_MNA_matrix()
         logger.info('MNA矩阵：' + str(martrix))
         logger.info(solver.output())
+
+    def solve(self):
+        try:
+            self._solve()
+        except Exception as e:
+            qtw.QMessageBox.critical(self, '求解失败', 'error: ' + str(e))
