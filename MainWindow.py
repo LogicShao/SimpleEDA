@@ -1,14 +1,16 @@
 from common_import import *
-from Solver import *
+from CircuitTopology import CircuitTopology
 import CircuitItem as CI
 
 
 class MainWindow(qtw.QMainWindow):
     selectedNode: CI.ItemNode | None = None
-    wires: list[CI.WireItem] = []
+    item_nodes: set[CI.ItemNode]
 
     def __init__(self):
         super().__init__()
+
+        self.item_nodes = set()
 
         self.setWindowTitle("电路分析仿真系统")
         self.setGeometry(100, 100, 1200, 800)
@@ -29,11 +31,24 @@ class MainWindow(qtw.QMainWindow):
         for itemType in CI.BTN_ITEM_TYPES:
             self.addItemBtn(self.btnBox, itemType)
 
+        solveBtn = qtw.QPushButton('求解')
+        solveBtn.clicked.connect(self.solve)
+        self.btnBox.addWidget(solveBtn)
+
         layout.addLayout(self.btnBox)
 
+        self.setStyleSheet("""
+            QMainWindow { background-color: black; }
+            QGraphicsView { background-color: black; }
+            QPushButton { background-color: rgb(50, 50, 50); color: white; }""")
+
     def addItemBtn(self, btnLayout: qtw.QHBoxLayout, item: type[CI.BaseCircuitItem]):
+        def add_item():
+            item_instance = item()
+            self.scene.addItem(item_instance)
+            self.scene.update()
         btn = qtw.QPushButton('添加{}'.format(item.What()))
-        btn.clicked.connect(lambda: self.scene.addItem(item()))
+        btn.clicked.connect(add_item)
         btnLayout.addWidget(btn)
 
     def NodeSelect(self, node: CI.ItemNode):
@@ -48,4 +63,12 @@ class MainWindow(qtw.QMainWindow):
             wire = CI.WireItem(node1, node2)
             self.scene.addItem(wire)
             self.scene.update()
-            self.wires.append(wire)
+            self.item_nodes.add(node1)
+            self.item_nodes.add(node2)
+
+    def solve(self):
+        solver = CircuitTopology(self.item_nodes)
+        logger.info(solver)
+        martrix = solver.get_MNA_matrix()
+        logger.info('MNA矩阵：' + str(martrix))
+        logger.info(solver.output())

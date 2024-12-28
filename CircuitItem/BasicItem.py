@@ -8,17 +8,17 @@ class WireItem(qtw.QGraphicsItem):
         self.start = start
         self.end = end
 
+        start.addWire(self)
+        end.addWire(self)
+
         self.start.signals.selfDeleted.connect(self.removeItem)
         self.end.signals.selfDeleted.connect(self.removeItem)
 
         self.start.signals.positionChanged.connect(self.updatePosition)
         self.end.signals.positionChanged.connect(self.updatePosition)
 
-        logger.info('添加导线 ({},{}) -> ({},{})'.format(
-            self.start.scenePos().x(),
-            self.start.scenePos().y(),
-            self.end.scenePos().x(),
-            self.end.scenePos().y()
+        logger.info('添加导线 ({}) <-> ({})'.format(
+            self.start.parentItem().getName(), self.end.parentItem().getName()
         ))
 
     def start_item(self):
@@ -33,6 +33,9 @@ class WireItem(qtw.QGraphicsItem):
 
         self.start.signals.selfDeleted.disconnect(self.removeItem)
         self.end.signals.selfDeleted.disconnect(self.removeItem)
+
+        self.start.removeWire(self)
+        self.end.removeWire(self)
 
         scene = self.scene()
         if scene:

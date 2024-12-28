@@ -1,5 +1,4 @@
 from common_import import *
-import sympy as sp
 
 
 class ItemCounter:
@@ -18,16 +17,32 @@ class ItemCounter:
 
 
 class CircuitNode:
-    potential: sp.Symbol  # 电位
+    potential: float | None = None
     _item_counter = ItemCounter()
     item_id: int
+    connect_items: list['BaseCircuitItem']
+    isGround: bool = False
+
+    def getName(self):
+        return 'V{}'.format(self.item_id)
 
     def __init__(self):
         self.item_id = self._item_counter.genItemID()
-        self.potential = sp.Symbol('V{}'.format(self.item_id))
+        self.connect_items = []
 
     def __del__(self):
         self._item_counter.delItemID(self.item_id)
+
+    def addConnectItem(self, item: 'BaseCircuitItem'):
+        self.connect_items.append(item)
+        if item.What() == 'GND':
+            self.isGround = True
+            self.potential = 0
+            self._item_counter.delItemID(self.item_id)
+            self.item_id = 0
+
+    def __str__(self):
+        return "{} [{}]".format(self.getName(), ','.join([item.getName() for item in self.connect_items]))
 
 
 class ItemSymbol(qtw.QGraphicsItem):
@@ -39,7 +54,34 @@ class ItemSymbol(qtw.QGraphicsItem):
         return [self.scenePos()]
 
 
+class ItemInfo(ItemSymbol):
+    def __init__(self, parent: qtw.QGraphicsItem, text: str, position: qtc.QPointF):
+        super().__init__(parent=parent)
+        self.text = text
+        self.width = 80
+        self.height = 20
+        self.setPos(position)
+
+    def boundingRect(self):
+        return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
+
+    def paint(self, painter, option, widget=None):
+        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        painter.setPen(pen)
+        painter.setFont(qtg.QFont('Arial', 12))
+        painter.drawText(self.boundingRect(),
+                         qtc.Qt.AlignmentFlag.AlignCenter, self.text)
+
+
 class ItemNode(ItemSymbol):
+    wires: set
+    circuitNode: CircuitNode | None = None
+    _item_node_counter = ItemCounter()
+    item_id: int
+
+    def __str__(self):
+        return '{}的节点'.format(self.parentItem().getName())
+
     class SignalEmitter(qtc.QObject):
         positionChanged = qtc.pyqtSignal()
         selfDeleted = qtc.pyqtSignal()
@@ -49,9 +91,21 @@ class ItemNode(ItemSymbol):
         self.setPos(position)
         self.radius = 3
         self.signals = self.SignalEmitter()
+        self.wires = set()
         self.setFlags(
             qtw.QGraphicsItem.GraphicsItemFlag.ItemIsSelectable |
             qtw.QGraphicsItem.GraphicsItemFlag.ItemSendsGeometryChanges)
+
+        self.item_id = self._item_node_counter.genItemID()
+
+    def __del__(self):
+        self._item_node_counter.delItemID(self.item_id)
+
+    def addWire(self, wire):
+        self.wires.add(wire)
+
+    def removeWire(self, wire):
+        self.wires.remove(wire)
 
     def boundingRect(self):
         return qtc.QRectF(-self.radius, -self.radius, 2 * self.radius, 2 * self.radius)
@@ -79,27 +133,8 @@ class ItemNode(ItemSymbol):
                 mainWindow.NodeSelect(self)
         super().mousePressEvent(event)
 
-    def getParentItem(self) -> 'BaseCircuitItem':
-        return self.parentItem()
-
-
-class ItemInfo(ItemSymbol):
-    def __init__(self, parent: qtw.QGraphicsItem, text: str, position: qtc.QPointF):
-        super().__init__(parent=parent)
-        self.text = text
-        self.width = 80
-        self.height = 20
-        self.setPos(position)
-
-    def boundingRect(self):
-        return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
-
-    def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
-        painter.setPen(pen)
-        painter.setFont(qtg.QFont('Arial', 12))
-        painter.drawText(self.boundingRect(),
-                         qtc.Qt.AlignmentFlag.AlignCenter, self.text)
+    def getConnectItemNodes(self) -> list['ItemNode']:
+        return [wire.start if wire.end == self else wire.end for wire in self.wires]
 
 
 class BaseCircuitItem(qtw.QGraphicsItem):
@@ -114,6 +149,12 @@ class BaseCircuitItem(qtw.QGraphicsItem):
 
     def getName(self):
         return self.What() + str(self.item_id)
+
+    def __str__(self):
+        return self.getName()
+
+    def getCircuitNodes(self) -> list[CircuitNode]:
+        return [node.circuitNode for node in self.nodes]
 
     def __init__(self):
         super().__init__()
@@ -168,3 +209,13 @@ class BaseCircuitItem(qtw.QGraphicsItem):
             for node in self.nodes:
                 node.signals.positionChanged.emit()
         return super().itemChange(change, value)
+
+    def getAnotherNode(self, node: ItemNode) -> ItemNode | None:
+        if node not in self.nodes or len(self.nodes) != 2:
+            return None
+        return self.nodes[1] if node == self.nodes[0] else self.nodes[0]
+
+    def __lt__(self, other):
+        if not isinstance(other, BaseCircuitItem):
+            raise TypeError('类型不匹配')
+        return self.item_id < other.item_id

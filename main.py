@@ -1,6 +1,7 @@
+from PyQt6.QtWidgets import QApplication
 from MainWindow import MainWindow
 from log_config import logger
-from PyQt6.QtWidgets import QApplication
+
 import sys
 import atexit
 
