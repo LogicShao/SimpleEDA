@@ -1,5 +1,4 @@
 from common_import import *
-from abc import abstractmethod
 
 
 class ItemCounter:
@@ -44,6 +43,11 @@ class CircuitNode:
 
     def __str__(self):
         return "{} [{}]".format(self.getName(), ','.join([item.getName() for item in self.connect_items]))
+
+    def __lt__(self, other):
+        if not isinstance(other, CircuitNode):
+            raise TypeError('类型不匹配')
+        return self.item_id < other.item_id
 
 
 class ItemSymbol(qtw.QGraphicsItem):
@@ -107,6 +111,12 @@ class ItemNode(ItemSymbol):
 
     def __del__(self):
         self._item_node_counter.delItemID(self.item_id)
+        try:
+            mainWinodw = self.scene().views()[0].window()
+            if mainWinodw:
+                mainWinodw._selected_node = None
+        except:
+            pass
 
     def addWire(self, wire):
         self.wires.add(wire)
@@ -197,6 +207,12 @@ class BaseCircuitItem(qtw.QGraphicsItem):
     def getCircuitNodes(self) -> list[CircuitNode]:
         return [node.circuitNode for node in self.nodes]
 
+    def onDeleted(self):
+        self._item_counter.delItemID(self.item_id)
+        for node in self.nodes:
+            node._item_node_counter.delItemID(node.item_id)
+        logger.info('删除{}'.format(self.getName()))
+
     def __init__(self):
         super().__init__()
 
@@ -211,8 +227,7 @@ class BaseCircuitItem(qtw.QGraphicsItem):
         logger.info('添加{}'.format(self.getName()))
 
     def __del__(self):
-        self._item_counter.delItemID(self.item_id)
-        logger.info('删除{}'.format(self.getName()))
+        self.onDeleted()
 
     def keyPressEvent(self, event):
         if event.key() == qtc.Qt.Key.Key_Delete:
@@ -250,7 +265,11 @@ class BaseCircuitItem(qtw.QGraphicsItem):
         logger.info('删除{}'.format(self.getName()))
         for node in self.nodes:
             node.signals.selfDeleted.emit()
-        self.scene().removeItem(self)
+            node._item_node_counter.delItemID(node.item_id)
+        scene = self.scene()
+        scene.removeItem(self)
+        scene.update()
+        self._item_counter.delItemID(self.item_id)
 
     def itemChange(self, change, value):
         if change == qtw.QGraphicsItem.GraphicsItemChange.ItemPositionChange:

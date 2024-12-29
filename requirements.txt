@@ -4,3 +4,7 @@ PyQt6==6.8.0
 PyQt6-Qt6==6.8.1
 PyQt6_sip==13.9.1
 sympy==1.13.3
+
+# Windows-only dependencies
+setuptools==75.6.0; platform_system == "Windows"
+wheel==0.45.1; platform_system == "Windows"

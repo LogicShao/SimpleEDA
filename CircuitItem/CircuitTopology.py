@@ -10,11 +10,21 @@ class NoGNDNodeError(Exception):
 
 
 class CircuitTopology:
-    def __init__(self, item_nodes: set[CI.ItemNode]):
+    def __init__(self, item_nodes: set[CI.ItemNode], items: set[CI.BaseCircuitItem]):
         self.circuit_nodes = self.getCircuitNodes(item_nodes)
-        self.items = set(item_node.parentItem()
-                         for item_node in item_nodes)
+
+        self.items = items
+        self.notGNDNodes = sorted(
+            node for node in self.circuit_nodes if not node.isGround)
+        self.notGNDNodeToIndex = {node: i for i,
+                                  node in enumerate(self.notGNDNodes)}
+        self.voltageSources = sorted(
+            item for item in self.items if isinstance(item, CI.VoltageSourceItem))
+        self.voltageSourceToIndex = {item: i for i,
+                                     item in enumerate(self.voltageSources)}
+
         self.adjacency_list = self.getAdjacencyList()
+        logger.info(self.adjacency_list)
 
     def getAdjacencyList(self) -> dict[CI.CircuitNode, set[tuple[CI.CircuitNode, CI.BaseCircuitItem]]]:
         adj = {node: set() for node in self.circuit_nodes}
@@ -55,40 +65,38 @@ class CircuitTopology:
     def getCircuitNodes(self, item_nodes: set[CI.ItemNode]) -> list[CI.CircuitNode]:
         visited = set()
         circuit_nodes = []
-
         for item_node in item_nodes:
             if item_node in visited:
                 continue
-
             circuit_node = CI.CircuitNode()
             circuit_nodes.append(circuit_node)
-
             item_nodes_of_same_potential = self.findItemNodesOfSamePotential(
                 item_node, visited)
             for item_node in item_nodes_of_same_potential:
                 circuit_node.addConnectItem(item_node.parentItem())
-
-                logger.info('添加元件 {} 到节点 {}'.format(
-                    item_node.parentItem().getName(), circuit_node.getName()))
-
                 item_node.circuitNode = circuit_node
-                logger.info('元件 {} 的节点为 {}'.format(
-                    item_node.parentItem().getName(), circuit_node.getName()))
-
         return circuit_nodes
 
     def getVoltageSourcesNum(self) -> int:
-        return sum(1 for item in self.items if isinstance(item, CI.VoltageSourceItem))
+        return len(self.voltageSources)
 
     def getVoltageSources(self) -> list[CI.VoltageSourceItem]:
-        return sorted((item for item in self.items if isinstance(item, CI.VoltageSourceItem)))
+        return self.voltageSources
 
     def getNumOfNotGND(self) -> int:
         # 除去地节点
-        return sum(1 for node in self.circuit_nodes if not node.isGround)
+        return len(self.notGNDNodes)
 
     def getNotGNDNodes(self) -> list[CI.CircuitNode]:
-        return [node for node in self.circuit_nodes if not node.isGround]
+        return self.notGNDNodes
+
+    def getNodesIndex(self, node: CI.CircuitNode) -> int:
+        if node.isGround:
+            return None
+        return self.notGNDNodeToIndex[node]
+
+    def getVoltageSourceIndex(self, item: CI.VoltageSourceItem) -> int:
+        return self.voltageSourceToIndex[item]
 
     def get_MNA_matrix(self):
         num_nodes = self.getNumOfNotGND()
@@ -96,9 +104,6 @@ class CircuitTopology:
 
         if num_nodes == len(self.circuit_nodes):
             raise NoGNDNodeError()
-
-        logger.info('节点数：{}'.format(num_nodes))
-        logger.info('电压源数：{}'.format(num_voltage_sources))
 
         G = np.zeros((num_nodes, num_nodes))
         B = np.zeros((num_nodes, num_voltage_sources))
@@ -109,7 +114,7 @@ class CircuitTopology:
         for item in self.items:
             if isinstance(item, CI.ResistorItem):
                 node1, node2 = item.getCircuitNodes()
-                n1, n2 = node1.item_id - 1, node2.item_id - 1
+                n1, n2 = self.getNodesIndex(node1), self.getNodesIndex(node2)
                 g = 1 / item.resistance
                 if not node1.isGround:
                     G[n1, n1] += g
@@ -120,8 +125,8 @@ class CircuitTopology:
                     G[n2, n1] -= g
             elif isinstance(item, CI.VoltageSourceItem):
                 node1, node2 = item.getCircuitNodes()
-                n1, n2 = node1.item_id - 1, node2.item_id - 1
-                voltage_index = item.item_id - 1
+                n1, n2 = self.getNodesIndex(node1), self.getNodesIndex(node2)
+                voltage_index = self.getVoltageSourceIndex(item)
                 if not node1.isGround:
                     B[n1, voltage_index] = 1
                 if not node2.isGround:
