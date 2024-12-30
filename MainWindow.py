@@ -5,7 +5,6 @@ import CircuitItem as CI
 class MainWindow(qtw.QMainWindow):
     _selected_node: CI.ItemNode | None = None
     _linked_item_node_pairs: set[tuple[CI.ItemNode, CI.ItemNode]]
-    _items = set[CI.BaseCircuitItem]
     item_nodes: set[CI.ItemNode]
     solved = False
 
@@ -17,7 +16,6 @@ class MainWindow(qtw.QMainWindow):
         self.setup_ui()
 
         self.item_nodes = set()
-        self._items = set()
         self._linked_item_node_pairs = set()
 
     def setup_ui(self):
@@ -72,7 +70,6 @@ class MainWindow(qtw.QMainWindow):
         def add_item():
             item_instance = item()
             self.scene.addItem(item_instance)
-            self._items.add(item_instance)
             self.scene.update()
         btn = qtw.QPushButton('添加{}'.format(item.What()))
         btn.clicked.connect(add_item)
@@ -104,24 +101,20 @@ class MainWindow(qtw.QMainWindow):
             self.item_nodes.add(node2)
 
     def solve(self):
-        try:
-            solver = CI.CircuitTopology(self.item_nodes, self._items)
-            martrix = solver.get_MNA_matrix()
-            self.onAfterSolve(True)
-            
-            logger.info('求解')
-            logger.info(solver)
-            logger.info('MNA矩阵：' + str(martrix))
-            logger.info(solver.output())
-        except Exception as e:
-            qtw.QMessageBox.critical(self, '求解失败', 'error: ' + str(e))
+        solver = CI.CircuitTopology(self.item_nodes)
+        martrix = solver.get_MNA_matrix()
+        self.onAfterSolve(True)
+
+        logger.info('求解')
+        logger.info(solver)
+        logger.info('MNA矩阵：' + str(martrix))
+        logger.info(solver.output())
 
     def clearItems(self):
-        self.scene.clear()
-        self.scene.update()
         self.item_nodes.clear()
         self._linked_item_node_pairs.clear()
         self._selected_node = None
-        self._items.clear()
+        self.scene.clear()
+        self.scene.update()
         self.onAfterSolve(False)
         logger.info('清空')

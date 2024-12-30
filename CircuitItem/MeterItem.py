@@ -70,6 +70,14 @@ class VoltmeterItem(BaseCircuitItem):
     def paint(self, painter, option, widget=None):
         pass
 
+    def get_current_expr_in_s_domin(self):
+        return 0
+
+    def get_voltage_expr_in_s_domin(self):
+        node1, node2 = self.nodes
+        expr = node1.circuitNode.potential - node2.circuitNode.potential
+        return expr
+
 
 class AmmeterSymbol(ItemSymbol):
     def __init__(self, parent: qtw.QGraphicsItem):

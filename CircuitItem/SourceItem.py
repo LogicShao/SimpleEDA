@@ -81,6 +81,15 @@ class VoltageSourceItem(BaseCircuitItem):
         self.voltageInfo.set_text(f'{self.voltage}V')
         self.scene().update()
 
+    def get_value(self):
+        return self.voltage
+
+    def get_voltage_expr_in_s_domin(self):
+        return self.voltage / self.s
+
+    def get_current_expr_in_s_domin(self):
+        return self.current
+
 
 class CurrentSourceSymbol(ItemSymbol):
     # 直流电流源
@@ -160,6 +169,17 @@ class CurrentSourceItem(BaseCircuitItem):
         self.currentInfo.set_text(f'{self.current}A')
         self.scene().update()
 
+    def get_value(self):
+        return self.current
+
+    def get_voltage_expr_in_s_domin(self):
+        node1, node2 = self.nodes
+        expr = node1.circuitNode.potential - node2.circuitNode.potential
+        return expr
+
+    def get_current_expr_in_s_domin(self):
+        return self.current / self.s
+
 
 class GroundSymbol(ItemSymbol):
     def __init__(self, parent: qtw.QGraphicsItem):
@@ -210,3 +230,6 @@ class GroundItem(BaseCircuitItem):
 
     def paint(self, painter, option, widget=None):
         pass
+
+    def get_voltage_expr_in_s_domin(self):
+        return 0

@@ -7,4 +7,4 @@ from .CircuitTopology import CircuitTopology
 __all__ = ['BaseCircuitItem', 'ItemNode', 'VoltageSourceItem', 'GroundItem',
            'CurrentSourceItem', 'ResistorItem', 'WireItem', 'VoltmeterItem', 'AmmeterItem', 'CircuitNode', 'CircuitTopology', 'CapacitorItem', 'InductorItem']
 BTN_ITEM_TYPES = [VoltageSourceItem, GroundItem,
-                  CurrentSourceItem, ResistorItem, CapacitorItem, InductorItem]
+                  CurrentSourceItem, ResistorItem, CapacitorItem, InductorItem, VoltmeterItem]

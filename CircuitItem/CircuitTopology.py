@@ -1,7 +1,7 @@
 from log_config import logger
 
 import CircuitItem as CI
-import numpy as np
+import sympy as sp
 
 
 class NoGNDNodeError(Exception):
@@ -10,10 +10,11 @@ class NoGNDNodeError(Exception):
 
 
 class CircuitTopology:
-    def __init__(self, item_nodes: set[CI.ItemNode], items: set[CI.BaseCircuitItem]):
+    def __init__(self, item_nodes: set[CI.ItemNode]):
+        self.s = sp.symbols('s', complex=True)
         self.circuit_nodes = self.getCircuitNodes(item_nodes)
 
-        self.items = items
+        self.items = set(node.parentItem() for node in item_nodes)
         self.notGNDNodes = sorted(
             node for node in self.circuit_nodes if not node.isGround)
         self.notGNDNodeToIndex = {node: i for i,
@@ -24,9 +25,21 @@ class CircuitTopology:
                                      item in enumerate(self.voltageSources)}
 
         self.adjacency_list = self.getAdjacencyList()
-        logger.info(self.adjacency_list)
+
+        self.t = sp.symbols('t', real=True)
+        self.solution = self.solve_MNA_matrix()
+        for node, pot in zip(self.notGNDNodes, self.solution):
+            node.potential = pot
+            logger.info('{}: {}'.format(node.getName(), pot))
+        for gnd_node in (node for node in self.circuit_nodes if node.isGround):
+            gnd_node.potential = 0
+            logger.info('{}: {}'.format(gnd_node.getName(), 0))
+        for item, cur in zip(self.voltageSources, self.solution[self.getNumOfNotGND():]):
+            item.current = cur
+            logger.info('{}: {}'.format(item.getName(), cur))
 
     def getAdjacencyList(self) -> dict[CI.CircuitNode, set[tuple[CI.CircuitNode, CI.BaseCircuitItem]]]:
+        # 构建 (节点, (连接节点, 元件)) 的邻接表
         adj = {node: set() for node in self.circuit_nodes}
         for node in self.circuit_nodes:
             for item in node.connect_items:
@@ -105,24 +118,32 @@ class CircuitTopology:
         if num_nodes == len(self.circuit_nodes):
             raise NoGNDNodeError()
 
-        G = np.zeros((num_nodes, num_nodes))
-        B = np.zeros((num_nodes, num_voltage_sources))
-        D = np.zeros((num_voltage_sources, num_voltage_sources))
-        I_s = np.zeros(num_nodes)
-        E = np.zeros(num_voltage_sources)
+        G = sp.zeros(num_nodes, num_nodes)
+        B = sp.zeros(num_nodes, num_voltage_sources)
+        D = sp.zeros(num_voltage_sources, num_voltage_sources)
+        I_s = sp.zeros(num_nodes, 1)
+        E = sp.zeros(num_voltage_sources, 1)
 
         for item in self.items:
             if isinstance(item, CI.ResistorItem):
+                Y = 1 / item.resistance
+            elif isinstance(item, CI.CapacitorItem):
+                Y = self.s * item.capacitance
+            elif isinstance(item, CI.InductorItem):
+                Y = 1 / (self.s * item.inductance)
+            else:
+                Y = 0
+
+            if isinstance(item, (CI.ResistorItem, CI.CapacitorItem, CI.InductorItem)):
                 node1, node2 = item.getCircuitNodes()
                 n1, n2 = self.getNodesIndex(node1), self.getNodesIndex(node2)
-                g = 1 / item.resistance
                 if not node1.isGround:
-                    G[n1, n1] += g
+                    G[n1, n1] += Y
                 if not node2.isGround:
-                    G[n2, n2] += g
+                    G[n2, n2] += Y
                 if not node1.isGround and not node2.isGround:
-                    G[n1, n2] -= g
-                    G[n2, n1] -= g
+                    G[n1, n2] -= Y
+                    G[n2, n1] -= Y
             elif isinstance(item, CI.VoltageSourceItem):
                 node1, node2 = item.getCircuitNodes()
                 n1, n2 = self.getNodesIndex(node1), self.getNodesIndex(node2)
@@ -131,29 +152,40 @@ class CircuitTopology:
                     B[n1, voltage_index] = 1
                 if not node2.isGround:
                     B[n2, voltage_index] = -1
-                E[voltage_index] = item.voltage
+                E[voltage_index] = item.voltage / self.s
+            elif isinstance(item, CI.CurrentSourceItem):
+                node1, node2 = item.getCircuitNodes()
+                n1, n2 = self.getNodesIndex(node1), self.getNodesIndex(node2)
+                if not node1.isGround:
+                    I_s[n1] += item.current / self.s
+                if not node2.isGround:
+                    I_s[n2] -= item.current / self.s
 
-        A = np.block([[G, B], [B.T, D]])
-        b = np.block([I_s, E])
+        A = sp.Matrix.vstack(
+            sp.Matrix.hstack(G, B),
+            sp.Matrix.hstack(B.T, D)
+        )
+        b = sp.Matrix.vstack(I_s, E)
 
         return A, b
 
     def solve_MNA_matrix(self):
         A, b = self.get_MNA_matrix()
-        x = np.linalg.solve(A, b)
-        return x
+        x = sp.linsolve((A, b))
+        return list(x)[0]
 
     def output(self) -> str:
-        x = self.solve_MNA_matrix()
-
+        x = self.solution
         logger.info('x: ' + str(x))
 
         potiential = x[:self.getNumOfNotGND()]
         current = x[self.getNumOfNotGND():]
         output = '电路节点电势：\n'
         for node, pot in zip(self.getNotGNDNodes(), potiential):
-            output += '{}: {:.2f}V\n'.format(node.getName(), pot)
+            output += '{}: {}V\n'.format(node.getName(), sp.inverse_laplace_transform(
+                pot, self.s, t=self.t).simplify())
         output += '电压源电流：\n'
         for item, cur in zip(self.getVoltageSources(), current):
-            output += '{}: {:.2f}A\n'.format(item.getName(), cur)
+            output += '{}: {}A\n'.format(item.getName(), sp.inverse_laplace_transform(
+                cur, self.s, t=self.t).simplify())
         return '电路求解结果：\n' + output
