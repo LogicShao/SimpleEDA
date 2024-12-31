@@ -53,8 +53,9 @@ Simple EDA 是简单的电路分析仿真项目。
 
 * `CircuitItem`：实现电路模块（绘制元件、构建电路拓扑以及求解）
   * `BaseCircuitItem.py`
-    * 实现元件基类 `BaseCircuitItem`，元件节点类 `ItemNode`，电路节点类 `CircuitNode`，元件符号类 `ItemSymbol`，元件标签类 `ItemInfo`。
-    * 一个元件（`BaseCircuitItem`）由元件的节点（`ItemNode`）列表、元件符号（`ItemSymbol`）组成。每一个元件结点会有一个电路节点（`CircuitNode`）的引用，电路节点会持有一个电位（在 s 域中的表达式）。
+    * 实现元件基类 `BaseCircuitItem`，元件节点类 `ItemNode`，电路节点类 `CircuitNode`，元件符号类 `ItemSymbol`，元件标签类 `ItemInfo`
+    * 实现元件的右键菜单：查看元件信息、修改、删除、绘制电流曲线、绘制电压曲线
+    * 一个元件（`BaseCircuitItem`）由元件的节点（`ItemNode`）列表、元件符号（`ItemSymbol`）组成。每一个元件结点会有一个电路节点（`CircuitNode`）的引用，电路节点会持有一个电位（在 s 域中的表达式）
     * 在求解之后，通过元件两端的电位绘制电压、电流曲线
   * `BasicItem.py`：实现导线、电阻、电容以及电感类
   * `CircuitTopology.py`
@@ -65,7 +66,7 @@ Simple EDA 是简单的电路分析仿真项目。
 * `common_import.py`：项目文件的公共导入模块
 * `log_config.py`：配置项目的日志，提供 `logger` 用于记录日志
 * `main.py`：项目主程序入口
-* `MainWindow.py`：实现 `MainWindow` 类，绘制项目的图像界面
+* `MainWindow.py`：实现 `MainWindow` 类，绘制项目的图形界面
 
 ## 运行截图
 
