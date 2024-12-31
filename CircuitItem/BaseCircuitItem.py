@@ -374,14 +374,15 @@ class BaseCircuitItem(qtw.QGraphicsItem):
                                    SPECIAL_FUNCTIONS, 'numpy'])
         logger.info('电流-时间波形：{}'.format(current_expr))
 
-        t_values = np.linspace(0, 10, 1000)
+        t_values = np.linspace(0, 100, 1000)
         current_values = current_func(t_values)
 
-        plt.plot(t_values, current_values, label='电流-时间波形')
+        plt.plot(t_values, current_values,
+                 label='{}:电流-时间波形'.format(self.getName()))
         plt.xlabel('时间/s')
         plt.ylabel('电流/A')
         plt.legend()
-        plt.title('电流-时间波形')
+        plt.title('{}:电流-时间波形'.format(self.getName()))
         plt.grid(True)
         plt.show()
 
@@ -389,6 +390,11 @@ class BaseCircuitItem(qtw.QGraphicsItem):
         if not self.get_solve_state():
             qtw.QMessageBox.warning(self.scene().views()[
                                     0].window(), '提示', '电路未求解')
+            return
+
+        if self.What() == 'GND':
+            qtw.QMessageBox.warning(self.scene().views()[
+                                    0].window(), '提示', 'GND无法绘制电压-时间波形')
             return
 
         voltage_expr = self.get_voltage_expr_in_s_domin()
@@ -403,14 +409,15 @@ class BaseCircuitItem(qtw.QGraphicsItem):
                                    SPECIAL_FUNCTIONS, 'numpy'])
         logger.info('电压-时间波形：{}'.format(voltage_expr))
 
-        t_values = np.linspace(0, 10, 1000)
+        t_values = np.linspace(0, 100, 1000)
         voltage_values = voltage_func(t_values)
 
-        plt.plot(t_values, voltage_values, label='电压-时间波形')
+        plt.plot(t_values, voltage_values,
+                 label='{}:电压-时间波形'.format(self.getName()))
         plt.xlabel('时间/s')
         plt.ylabel('电压/V')
         plt.legend()
-        plt.title('电压-时间波形')
+        plt.title('{}:电压-时间波形'.format(self.getName()))
         plt.grid(True)
         plt.show()
 
