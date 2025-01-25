@@ -13,7 +13,7 @@ class VoltageSourceSymbol(ItemSymbol):
         return qtc.QRectF(-self.size / 2, -self.size / 2, self.size, self.size)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
         painter.setBrush(qtg.QBrush(
             qtc.Qt.GlobalColor.white, qtc.Qt.BrushStyle.NoBrush))
@@ -84,10 +84,10 @@ class VoltageSourceItem(BaseCircuitItem):
     def get_value(self):
         return self.voltage
 
-    def get_voltage_expr_in_s_domin(self):
+    def get_voltage_expr_in_s_domain(self):
         return self.voltage / self.s
 
-    def get_current_expr_in_s_domin(self):
+    def get_current_expr_in_s_domain(self):
         return self.current
 
 
@@ -102,7 +102,7 @@ class CurrentSourceSymbol(ItemSymbol):
         return qtc.QRectF(-self.size / 2, -self.size / 2, self.size, self.size)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
         painter.setBrush(qtg.QBrush(
             qtc.Qt.GlobalColor.white, qtc.Qt.BrushStyle.NoBrush))
@@ -172,12 +172,12 @@ class CurrentSourceItem(BaseCircuitItem):
     def get_value(self):
         return self.current
 
-    def get_voltage_expr_in_s_domin(self):
+    def get_voltage_expr_in_s_domain(self):
         node1, node2 = self.nodes
         expr = node1.circuitNode.potential - node2.circuitNode.potential
         return expr
 
-    def get_current_expr_in_s_domin(self):
+    def get_current_expr_in_s_domain(self):
         return self.current / self.s
 
 
@@ -191,9 +191,9 @@ class GroundSymbol(ItemSymbol):
         return qtc.QRectF(-self.width / 2, 0, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
-        painter.setBrush(qtg.QBrush(qtc.Qt.GlobalColor.red))
+        painter.setBrush(qtg.QBrush(qtc.Qt.GlobalColor.blue))
         painter.drawLine(qtc.QPointF(0, 0), qtc.QPointF(0, self.height))
         painter.drawLine(qtc.QPointF(-self.width / 2, self.height),
                          qtc.QPointF(self.width / 2, self.height))
@@ -231,5 +231,5 @@ class GroundItem(BaseCircuitItem):
     def paint(self, painter, option, widget=None):
         pass
 
-    def get_voltage_expr_in_s_domin(self):
+    def get_voltage_expr_in_s_domain(self):
         return 0

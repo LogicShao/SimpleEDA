@@ -14,9 +14,9 @@ class VoltmeterSymbol(ItemSymbol):
         return qtc.QRectF(-self.size / 2, -self.size / 2, self.size, self.size)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
-        painter.setBrush(qtg.QBrush(qtc.Qt.GlobalColor.red,
+        painter.setBrush(qtg.QBrush(qtc.Qt.GlobalColor.blue,
                          qtc.Qt.BrushStyle.NoBrush))
 
         painter.drawEllipse(qtc.QPointF(0, 0), self.radius, self.radius)
@@ -70,10 +70,10 @@ class VoltmeterItem(BaseCircuitItem):
     def paint(self, painter, option, widget=None):
         pass
 
-    def get_current_expr_in_s_domin(self):
+    def get_current_expr_in_s_domain(self):
         return 0
 
-    def get_voltage_expr_in_s_domin(self):
+    def get_voltage_expr_in_s_domain(self):
         node1, node2 = self.nodes
         expr = node1.circuitNode.potential - node2.circuitNode.potential
         return expr
@@ -91,9 +91,9 @@ class AmmeterSymbol(ItemSymbol):
         return qtc.QRectF(-self.size / 2, -self.size / 2, self.size, self.size)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
-        painter.setBrush(qtg.QBrush(qtc.Qt.GlobalColor.red,
+        painter.setBrush(qtg.QBrush(qtc.Qt.GlobalColor.blue,
                          qtc.Qt.BrushStyle.NoBrush))
 
         painter.drawEllipse(qtc.QPointF(0, 0), self.radius, self.radius)
@@ -148,3 +148,6 @@ class AmmeterItem(BaseCircuitItem):
 
     def paint(self, painter, option, widget=None):
         pass
+
+    def get_voltage_expr_in_s_domain(self):
+        return 0

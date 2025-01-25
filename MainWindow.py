@@ -1,6 +1,120 @@
 from common_import import *
 import CircuitItem as CI
 
+main_QSS = """
+    QMainWindow { 
+        background-color: white; 
+    }
+    QGraphicsView { 
+        background-color: white; 
+    }
+    QPushButton { 
+        background-color: #D3D3D3; 
+        color: black; 
+        border: none; 
+        padding: 10px 20px; 
+        text-align: center; 
+        text-decoration: none; 
+        font-size: 16px; 
+        margin: 4px 2px; 
+        border-radius: 8px; 
+    }
+    QPushButton:hover { 
+        background-color: #C0C0C0; 
+        color: black; 
+        border: 2px solid #A9A9A9; 
+    }
+    QPushButton:pressed { 
+        background-color: #A9A9A9; 
+    }
+    QScrollBar:vertical {
+        border: 1px solid #A9A9A9;
+        background: #D3D3D3;
+        width: 16px;
+        margin: 16px 0 16px 0;
+        border-radius: 8px;
+    }
+    QScrollBar::handle:vertical {
+        background: #A9A9A9;
+        min-height: 20px;
+        border-radius: 8px;
+    }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+        background: #C0C0C0;
+        height: 16px;
+        subcontrol-origin: margin;
+        border-radius: 8px;
+    }
+    QScrollBar::add-line:vertical {
+        subcontrol-position: bottom;
+    }
+    QScrollBar::sub-line:vertical {
+        subcontrol-position: top;
+    }
+    QScrollBar::up-arrow:vertical, QScrollBar::down-arrow:vertical {
+        border: none;
+    }
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+        background: none;
+    }
+    QScrollBar:horizontal {
+        border: 1px solid #A9A9A9;
+        background: #D3D3D3;
+        height: 16px;
+        margin: 0 16px 0 16px;
+        border-radius: 8px;
+    }
+    QScrollBar::handle:horizontal {
+        background: #A9A9A9;
+        min-width: 20px;
+        border-radius: 8px;
+    }
+    QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+        background: #C0C0C0;
+        width: 16px;
+        subcontrol-origin: margin;
+        border-radius: 8px;
+    }
+    QScrollBar::add-line:horizontal {
+        subcontrol-position: right;
+    }
+    QScrollBar::sub-line:horizontal {
+        subcontrol-position: left;
+    }
+    QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal {
+        border: none;
+    }
+    QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+        background: none;
+    }
+"""
+
+
+class GridScene(qtw.QGraphicsScene):
+    def __init__(self, parent=None):
+        super(GridScene, self).__init__(parent)
+
+    def drawBackground(self, painter, rect):
+        super(GridScene, self).drawBackground(painter, rect)
+        # 设置网格线的颜色
+        grid_color = qtg.QColor(200, 200, 200, 200)
+        painter.setPen(grid_color)
+        # 设置网格线的间隔
+        grid_size = 20
+        # 获取视图的边界
+        left = int(rect.left()) - (int(rect.left()) % grid_size)
+        top = int(rect.top()) - (int(rect.top()) % grid_size)
+        # 绘制垂直网格线
+        x = left
+        while x < rect.right():
+            painter.drawLine(qtc.QLineF(x, rect.top(), x, rect.bottom()))
+            x += grid_size
+        # 绘制水平网格线
+        y = top
+        while y < rect.bottom():
+            painter.drawLine(qtc.QLineF(rect.left(), y, rect.right(), y))
+            y += grid_size
+
 
 class MainWindow(qtw.QMainWindow):
     _selected_node: CI.ItemNode | None = None
@@ -19,7 +133,7 @@ class MainWindow(qtw.QMainWindow):
         self._linked_item_node_pairs = set()
 
     def setup_ui(self):
-        self.scene = qtw.QGraphicsScene()  # 电路图绘制区域
+        self.scene = GridScene()
         self.view = qtw.QGraphicsView(self.scene)
         self.view.setRenderHint(qtg.QPainter.RenderHint.Antialiasing)
 
@@ -32,10 +146,7 @@ class MainWindow(qtw.QMainWindow):
         self.btnBox = self.getBtnLayout()
         self._layout.addLayout(self.btnBox)
 
-        self.setStyleSheet("""
-            QMainWindow { background-color: black; }
-            QGraphicsView { background-color: black; }
-            QPushButton { background-color: rgb(50, 50, 50); color: white; }""")
+        self.setStyleSheet(main_QSS)
 
     def getBtnLayout(self) -> qtw.QHBoxLayout:
         btnLayout = qtw.QHBoxLayout()
@@ -44,7 +155,7 @@ class MainWindow(qtw.QMainWindow):
             clearBtn.clicked.connect(self.clearItems)
             btnLayout.addWidget(clearBtn)
             return btnLayout
-        for itemType in CI.BTN_ITEM_TYPES:
+        for itemType in CI.ADD_ITEM_TYPES:
             self.addItemBtn(btnLayout, itemType)
         solveBtn = qtw.QPushButton('求解')
         solveBtn.clicked.connect(self.solve)
@@ -101,9 +212,14 @@ class MainWindow(qtw.QMainWindow):
             self.item_nodes.add(node2)
 
     def solve(self):
-        solver = CI.CircuitTopology(self.item_nodes)
-        martrix = solver.get_MNA_matrix()
-        self.onAfterSolve(True)
+        try:
+            solver = CI.CircuitTopology(self.item_nodes)
+            martrix = solver.get_MNA_matrix()
+            self.onAfterSolve(True)
+        except Exception as e:
+            logger.error(e)
+            qtw.QMessageBox.critical(self, '错误', str(e))
+            return
 
         logger.info('求解')
         logger.info(solver)

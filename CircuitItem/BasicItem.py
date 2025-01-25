@@ -52,7 +52,7 @@ class WireItem(qtw.QGraphicsItem):
         return qtc.QRectF(self.start.scenePos(), self.end.scenePos())
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
 
         start_pos = self.start.scenePos()
@@ -112,7 +112,7 @@ class ResistorSymbol(ItemSymbol):
         return qtc.QRectF(0, 0, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
         # 绘制 zig-zag 线（电阻符号）
         points = self.getPoints()
@@ -170,12 +170,12 @@ class ResistorItem(BaseCircuitItem):
     def get_value(self):
         return self.resistance
 
-    def get_voltage_expr_in_s_domin(self) -> sp.Expr | None:
+    def get_voltage_expr_in_s_domain(self) -> sp.Expr | None:
         node1, node2 = self.nodes
         expr = node1.circuitNode.potential - node2.circuitNode.potential
         return expr
 
-    def get_current_expr_in_s_domin(self) -> sp.Expr | None:
+    def get_current_expr_in_s_domain(self) -> sp.Expr | None:
         node1, node2 = self.nodes
         expr = (node1.circuitNode.potential -
                 node2.circuitNode.potential) / self.resistance
@@ -192,7 +192,7 @@ class CapacitorSymbol(ItemSymbol):
         return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
 
         side_margin_factor = 0.4
@@ -260,13 +260,13 @@ class CapacitorItem(BaseCircuitItem):
     def get_value(self):
         return self.capacitance
 
-    def get_current_expr_in_s_domin(self) -> sp.Expr | None:
+    def get_current_expr_in_s_domain(self) -> sp.Expr | None:
         node1, node2 = self.nodes
         Y = self.capacitance * self.s
         expr = Y * (node1.circuitNode.potential - node2.circuitNode.potential)
         return expr
 
-    def get_voltage_expr_in_s_domin(self) -> sp.Expr | None:
+    def get_voltage_expr_in_s_domain(self) -> sp.Expr | None:
         node1, node2 = self.nodes
         expr = node1.circuitNode.potential - node2.circuitNode.potential
         return expr
@@ -282,7 +282,7 @@ class InductorSymbol(ItemSymbol):
         return qtc.QRectF(-self.width / 2, -self.height / 2, self.width, self.height)
 
     def paint(self, painter, option, widget=None):
-        pen = qtg.QPen(qtc.Qt.GlobalColor.red, 2)
+        pen = qtg.QPen(qtc.Qt.GlobalColor.blue, 2)
         painter.setPen(pen)
 
         side_margin_factor = 0.25
@@ -360,13 +360,13 @@ class InductorItem(BaseCircuitItem):
     def get_value(self):
         return self.inductance
 
-    def get_current_expr_in_s_domin(self) -> sp.Expr | None:
+    def get_current_expr_in_s_domain(self) -> sp.Expr | None:
         Y = 1 / (self.inductance * self.s)
         node1, node2 = self.nodes
         expr = Y * (node1.circuitNode.potential - node2.circuitNode.potential)
         return expr
 
-    def get_voltage_expr_in_s_domin(self) -> sp.Expr | None:
+    def get_voltage_expr_in_s_domain(self) -> sp.Expr | None:
         node1, node2 = self.nodes
         expr = node1.circuitNode.potential - node2.circuitNode.potential
         return expr

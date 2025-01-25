@@ -73,6 +73,10 @@ class CircuitTopology:
         for connect_node in item_node.getConnectItemNodes():
             item_nodes += self.findItemNodesOfSamePotential(
                 connect_node, visited)
+            connect_item = connect_node.parentItem()
+            if isinstance(connect_item, CI.AmmeterItem):
+                item_nodes += self.findItemNodesOfSamePotential(
+                    connect_item.getAnotherNode(connect_node), visited)
         return item_nodes
 
     def getCircuitNodes(self, item_nodes: set[CI.ItemNode]) -> list[CI.CircuitNode]:
