@@ -8,7 +8,7 @@ main_QSS = """
     QGraphicsView { 
         background-color: white; 
     }
-    QPushButton { 
+    QPushButton#mainBtn { 
         background-color: #D3D3D3; 
         color: black; 
         border: none; 
@@ -19,12 +19,12 @@ main_QSS = """
         margin: 4px 2px; 
         border-radius: 8px; 
     }
-    QPushButton:hover { 
+    QPushButton#mainBtn:hover {
         background-color: #C0C0C0; 
         color: black; 
         border: 2px solid #A9A9A9; 
     }
-    QPushButton:pressed { 
+    QPushButton#mainBtn:pressed {
         background-color: #A9A9A9; 
     }
     QScrollBar:vertical {
@@ -116,6 +116,12 @@ class GridScene(qtw.QGraphicsScene):
             y += grid_size
 
 
+class MainBtn(qtw.QPushButton):
+    def __init__(self, text: str, parent: qtw.QWidget = None):
+        super().__init__(text, parent)
+        self.setObjectName('mainBtn')
+
+
 class MainWindow(qtw.QMainWindow):
     _selected_node: CI.ItemNode | None = None
     _linked_item_node_pairs: set[tuple[CI.ItemNode, CI.ItemNode]]
@@ -151,13 +157,13 @@ class MainWindow(qtw.QMainWindow):
     def getBtnLayout(self) -> qtw.QHBoxLayout:
         btnLayout = qtw.QHBoxLayout()
         if self.solved:
-            clearBtn = qtw.QPushButton('清空')
+            clearBtn = MainBtn('清空')
             clearBtn.clicked.connect(self.clearItems)
             btnLayout.addWidget(clearBtn)
             return btnLayout
         for itemType in CI.ADD_ITEM_TYPES:
             self.addItemBtn(btnLayout, itemType)
-        solveBtn = qtw.QPushButton('求解')
+        solveBtn = MainBtn('求解')
         solveBtn.clicked.connect(self.solve)
         btnLayout.addWidget(solveBtn)
         return btnLayout
@@ -182,7 +188,7 @@ class MainWindow(qtw.QMainWindow):
             item_instance = item()
             self.scene.addItem(item_instance)
             self.scene.update()
-        btn = qtw.QPushButton('添加{}'.format(item.What()))
+        btn = MainBtn('添加{}'.format(item.What()))
         btn.clicked.connect(add_item)
         btnLayout.addWidget(btn)
 

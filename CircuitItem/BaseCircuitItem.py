@@ -426,9 +426,14 @@ class BaseCircuitItem(qtw.QGraphicsItem):
         plt.show()
 
     def modifyItem(self):
-        if not self._has_value or self.get_solve_state():
+        if self.get_solve_state():
             qtw.QMessageBox.warning(self.scene().views()[
                                     0].window(), '提示', '求解结束电路不可修改，请通过清除按钮清空电路')
+            return
+
+        if not self._has_value:
+            qtw.QMessageBox.warning(self.scene().views()[
+                                    0].window(), '提示', '元件无法修改')
             return
 
         logger.info('修改{}'.format(self.getName()))

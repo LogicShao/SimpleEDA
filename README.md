@@ -31,7 +31,17 @@ Simple EDA 是简单的电路分析仿真项目。
     cd SimpleEDA
     ```
 
-3. 安装依赖（至少需要 `python 3.12`）：
+3. 创建并激活虚拟环境
+
+    ```bash
+    python -m venv .venv
+    # Windows
+    .venv\Scripts\activate
+    # Linux
+    source .venv/bin/activate
+    ```
+
+4. 安装依赖（至少需要 `python 3.12`）：
 
     ```bash
     pip install -r requirements.txt
